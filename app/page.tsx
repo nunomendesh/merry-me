@@ -75,9 +75,9 @@ export default function HomePage() {
           </Paragraph>
         </div>
 
-        {/* ИСПРАВЛЕНО: Используем импортированный компонент BookingForm */}
-        {/* ИСПРАВЛЕНО: Suspense вокруг клиентского компонента не нужен, если он не лениво загружается */}
-        <BookingForm />
+        <Suspense fallback={null}>
+          <BookingForm />
+        </Suspense>
 
         <div style={{ maxWidth: '1000px', margin: '60px auto 0 auto' }}>
           <Title level={2} style={{ textAlign: 'center', marginBottom: '32px' }}>
