@@ -1,65 +1,153 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState } from 'react';
+import { Button, Modal, Input } from 'antd';
 
 export default function Home() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  // Состояние для полей формы
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+  });
+
+  // Состояние для ошибок валидации
+  const [errors, setErrors] = useState({
+    name: '',
+    phone: '',
+  });
+
+  // Универсальная функция обновления полей (Принцип DRY)
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    // Сбрасываем ошибку поля при вводе текста
+    setErrors((prev) => ({ ...prev, [name]: '' }));
+  };
+
+  // Функция сохранения записи
+  const handleBookingSubmit = () => {
+    // Простая ручная валидация, имитирующая схему Yup под ТЗ куратора
+    let hasError = false;
+    const newErrors = { name: '', phone: '' };
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Обязательное поле.';
+      hasError = true;
+    }
+    if (!formData.phone.trim()) {
+      newErrors.phone = 'Обязательное поле.';
+      hasError = true;
+    }
+
+    if (hasError) {
+      setErrors(newErrors);
+      return;
+    }
+
+    // Если всё заполнено, создаем объект новой заявки
+    const newAppointment = {
+      id: Date.now(),
+      name: formData.name,
+      phone: formData.phone,
+      status: 'pending', // Статус для админки (новое)
+      date: '', // Менеджер проставит при звонке
+    };
+
+    // Достаем старые записи из localStorage, добавляем новую и сохраняем обратно
+    const existingAppointments = JSON.parse(localStorage.getItem('med-appointments') || '[]');
+    existingAppointments.push(newAppointment);
+    localStorage.setItem('med-appointments', JSON.stringify(existingAppointments));
+
+    // Очищаем форму и закрываем модалку
+    setFormData({ name: '', phone: '' });
+    setIsModalOpen(false);
+    alert('Заявка успешно отправлена! Наш менеджер свяжется с вами в ближайшее время.');
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+      <main className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
+        <div className="text-center max-w-2xl">
+          <h1 className="text-4xl font-extrabold text-blue-600 mb-4">
+            Многопрофильный Медицинский Центр
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-gray-600 mb-8 text-lg">
+            Качественное медицинское обслуживание в Бишкеке. Нажмите на кнопку ниже, чтобы записаться на прием к специалисту.
           </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+          <Button
+              type="primary"
+              size="large"
+              className="bg-blue-500 hover:bg-blue-600 h-12 px-8 rounded-full text-base font-semibold shadow-md"
+              onClick={() => setIsModalOpen(true)}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            Записаться на прием к врачу
+          </Button>
         </div>
+
+        {/* МОДАЛЬНОЕ ОКНО ЗАПИСИ (Стилизовано под medcenter.kg) */}
+        <Modal
+            title={null} // Скрываем стандартный заголовок, чтобы сделать кастомный
+            open={isModalOpen}
+            onCancel={() => setIsModalOpen(false)}
+            footer={null} // Скрываем стандартные кнопки OK/Cancel
+            centered
+            width={450}
+        >
+          <div className="text-center pt-4 pb-2">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">Запишитесь на прием к врачу</h2>
+            <p className="text-sm text-gray-500 max-w-xs mx-auto mb-6">
+              Оставьте свои контактные данные и наш менеджер перезвонит вам в ближайшее время и запишет на прием к интересующему вам врачу
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            {/* Поле Имени */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Введите ваше Имя <span className="text-red-500">*</span>
+              </label>
+              <Input
+                  name="name"
+                  placeholder="Ваше Имя"
+                  size="large"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className={`hover:border-blue-500 focus:border-blue-500 ${errors.name ? 'border-red-500' : ''}`}
+              />
+              {errors.name && <p className="text-red-500 text-xs mt-1 font-medium">{errors.name}</p>}
+            </div>
+
+            {/* Поле Телефона */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
+                Введите ваш телефон <span className="text-red-500">*</span>
+              </label>
+              <Input
+                  name="phone"
+                  placeholder="Ваш телефон"
+                  size="large"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className={`hover:border-blue-500 focus:border-blue-500 ${errors.phone ? 'border-red-500' : ''}`}
+              />
+              {errors.phone && <p className="text-red-500 text-xs mt-1 font-medium">{errors.phone}</p>}
+            </div>
+
+            {/* Кнопка отправки */}
+            <div className="text-center pt-4">
+              <Button
+                  type="primary"
+                  size="large"
+                  onClick={handleBookingSubmit}
+                  className="bg-blue-500 hover:bg-blue-600 w-full md:w-auto px-10 h-11 rounded-full font-semibold"
+              >
+                Записаться к врачу
+              </Button>
+            </div>
+          </div>
+        </Modal>
       </main>
-    </div>
   );
 }
