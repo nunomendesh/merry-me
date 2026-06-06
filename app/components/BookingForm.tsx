@@ -2,13 +2,12 @@
 
 import React, { useEffect } from 'react';
 import { Form, Input, Button, Select, Card, Typography, message } from 'antd';
-import { UserOutlined, PhoneOutlined } from '@ant-design/icons'; // MedicineBoxOutlined не используется напрямую в Select prefix
+import { UserOutlined, PhoneOutlined } from '@ant-design/icons';
 import { servicesData } from '../data/servicesData';
 import { doctorsData } from '../data/doctorsData';
 import { useSearchParams } from 'next/navigation';
 
 const { Title, Paragraph } = Typography;
-const { Option } = Select;
 
 export default function BookingForm() {
     const [form] = Form.useForm();
@@ -35,8 +34,8 @@ export default function BookingForm() {
         const doctorParam = searchParams.get('doctor');
 
         const initialValues: { service: string; doctor: string } = {
-            service: 'Обратный звонок', // Значение по умолчанию
-            doctor: 'Не выбран (распределит оператор)', // Значение по умолчанию
+            service: 'Обратный звонок',
+            doctor: 'Не выбран (распределит оператор)',
         };
 
         if (serviceParam) {
@@ -52,7 +51,7 @@ export default function BookingForm() {
         form.setFieldsValue(initialValues);
     }, [searchParams, form, serviceOptions, doctorOptions]);
 
-    const onFinish = (values: { name: string; phone: string; service: string; doctor: string }) => { // ИСПРАВЛЕНО: Уточнен тип values
+    const onFinish = (values: { name: string; phone: string; service: string; doctor: string }) => {
         try {
             const storedBookings = localStorage.getItem('med-bookings');
             const currentBookings = storedBookings ? JSON.parse(storedBookings) : [];
@@ -72,75 +71,89 @@ export default function BookingForm() {
             localStorage.setItem('med-bookings', JSON.stringify([...currentBookings, newBooking]));
             message.success(`Заявка на "${values.service}" принята! Менеджер свяжется с вами в ближайшее время.`);
             form.resetFields();
-            // После сброса полей, устанавливаем значения по умолчанию снова, чтобы не терять предзаполненные из URL
             form.setFieldsValue({
                 service: 'Обратный звонок',
                 doctor: 'Не выбран (распределит оператор)',
             });
         } catch (error) {
-            console.error('Ошибка при сохранении заявки:', error); // ИСПРАВЛЕНО: Добавлен console.error
+            console.error('Ошибка при сохранении заявки:', error);
             message.error('Что-то пошло не так при сохранении заявки.');
         }
     };
 
     return (
-        <Card styles={{ body: { padding: '32px' } }} style={{ maxWidth: '500px', margin: '0 auto', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.08)' }} variant="borderless">
-            <Title level={3} style={{ textAlign: 'center', marginBottom: '8px' }}>
-                Онлайн-запись на прием
-            </Title>
-
-            <Paragraph style={{ textAlign: 'center', color: '#64748b', marginBottom: '24px', fontSize: '14px', lineHeight: '1.6' }}>
-                Оставьте свои контактные данные и наш менеджер перезвонит вам в ближайшее время и запишет на прием к интересующему вас специалисту.
-            </Paragraph>
-
-            <Form
-                form={form}
-                layout="vertical"
-                onFinish={onFinish}
-                requiredMark={false}
-                initialValues={{
-                    service: 'Обратный звонок',
-                    doctor: 'Не выбран (распределит оператор)',
+        <div style={{ padding: '0 16px', width: '100%' }}>
+            {/* Обертка гарантирует, что на мобилках карточка не прилипнет к краям экрана */}
+            <Card
+                // АДАПТИВНЫЙ ПАДДИНГ: На мобилках Ant Design автоматически уменьшит padding
+                // внутри тела карточки, если не хардкодить rigid стили в styles.body
+                style={{
+                    maxWidth: '500px',
+                    margin: '24px auto',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.08)'
                 }}
+                variant="borderless"
             >
-                <Form.Item name="name" label="Ваше имя" rules={[{ required: true, message: 'Пожалуйста, введите ваше имя' }]}>
-                    <Input prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} placeholder="Иванов Иван Иванович" size="large" />
-                </Form.Item>
+                <Title level={3} style={{ textAlign: 'center', marginBottom: '8px', fontSize: 'clamp(20px, 5vw, 24px)' }}>
+                    {/* Крупные заголовки на маленьких телефонах могут переноситься некрасиво.
+                        clamp() делает размер шрифта гибким: минимум 20px, максимум 24px */}
+                    Онлайн-запись на прием
+                </Title>
 
-                <Form.Item name="phone" label="Номер телефона" rules={[{ required: true, message: 'Пожалуйста, введите номер телефона' }]}>
-                    <Input prefix={<PhoneOutlined style={{ color: '#bfbfbf' }} />} placeholder="+996 (XXX) XXX-XXX" size="large" />
-                </Form.Item>
+                <Paragraph style={{ textAlign: 'center', color: '#64748b', marginBottom: '24px', fontSize: '14px', lineHeight: '1.6' }}>
+                    Оставьте свои контактные данные и наш менеджер перезвонит вам в ближайшее время и запишет на прием к интересующему вас специалисту.
+                </Paragraph>
 
-                <Form.Item name="service" label="Интересующая услуга">
-                    <Select
-                        placeholder="Выберите услугу"
-                        size="large"
-                        options={serviceOptions}
-                        showSearch
-                        filterOption={(input, option) =>
-                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                        }
-                    />
-                </Form.Item>
+                <Form
+                    form={form}
+                    layout="vertical"
+                    onFinish={onFinish}
+                    requiredMark={false}
+                    initialValues={{
+                        service: 'Обратный звонок',
+                        doctor: 'Не выбран (распределит оператор)',
+                    }}
+                >
+                    <Form.Item name="name" label="Ваше имя" rules={[{ required: true, message: 'Пожалуйста, введите ваше имя' }]}>
+                        <Input prefix={<UserOutlined style={{ color: '#bfbfbf' }} />} placeholder="Иванов Иван Иванович" size="large" />
+                    </Form.Item>
 
-                <Form.Item name="doctor" label="Предпочитаемый специалист">
-                    <Select
-                        placeholder="Выберите врача (необязательно)"
-                        size="large"
-                        options={doctorOptions}
-                        showSearch
-                        filterOption={(input, option) =>
-                            (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
-                        }
-                    />
-                </Form.Item>
+                    <Form.Item name="phone" label="Номер телефона" rules={[{ required: true, message: 'Пожалуйста, введите номер телефона' }]}>
+                        <Input prefix={<PhoneOutlined style={{ color: '#bfbfbf' }} />} placeholder="+996 (XXX) XXX-XXX" size="large" />
+                    </Form.Item>
 
-                <Form.Item style={{ marginTop: '24px', marginBottom: 0 }}>
-                    <Button type="primary" htmlType="submit" size="large" block style={{ borderRadius: '6px', fontWeight: 600 }}>
-                        Отправить заявку
-                    </Button>
-                </Form.Item>
-            </Form>
-        </Card>
+                    <Form.Item name="service" label="Интересующая услуга">
+                        <Select
+                            placeholder="Выберите услугу"
+                            size="large"
+                            options={serviceOptions}
+                            showSearch
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                        />
+                    </Form.Item>
+
+                    <Form.Item name="doctor" label="Предпочитаемый специалист">
+                        <Select
+                            placeholder="Выберите врача (необязательно)"
+                            size="large"
+                            options={doctorOptions}
+                            showSearch
+                            filterOption={(input, option) =>
+                                (option?.label ?? '').toLowerCase().includes(input.toLowerCase())
+                            }
+                        />
+                    </Form.Item>
+
+                    <Form.Item style={{ marginTop: '24px', marginBottom: 0 }}>
+                        <Button type="primary" htmlType="submit" size="large" block style={{ borderRadius: '6px', fontWeight: 600 }}>
+                            Отправить заявку
+                        </Button>
+                    </Form.Item>
+                </Form>
+            </Card>
+        </div>
     );
 }
