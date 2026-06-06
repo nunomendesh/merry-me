@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { Form, Input, Button, Select, Card, Typography, message, Row, Col, Rate, Grid } from 'antd';
 import BookingForm from './components/BookingForm';
 
@@ -29,7 +29,8 @@ interface IClinicSettings {
   tagline: string;
 }
 
-export default function HomePage() {
+// 1. Выносим всю твою логику главной страницы в изолированный компонент
+function HomePageContent() {
   const screens = useBreakpoint();
   const isMobile = screens.xs || (screens.sm && !screens.md);
 
@@ -208,5 +209,18 @@ export default function HomePage() {
           </Row>
         </div>
       </div>
+  );
+}
+
+// 2. Главный экспорт страницы, обернутый в Suspense (чтобы Vercel и Next build не падали из-за useSearchParams)
+export default function HomePage() {
+  return (
+      <Suspense fallback={
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', flexDirection: 'column', gap: '12px', background: '#f8fafc' }}>
+          <Title level={3} type="secondary">Загрузка интерфейса клиники...</Title>
+        </div>
+      }>
+        <HomePageContent />
+      </Suspense>
   );
 }
