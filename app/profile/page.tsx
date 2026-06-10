@@ -53,7 +53,7 @@ export default function ProfilePage() {
         localStorage.setItem('med-current-user', JSON.stringify(values));
         setUser(values);
         loadUserBookings(values.name, values.phone);
-        message.success(`Добро пожаловать, ${values.name}!`);
+        message.success(`Рады видеть вас, ${values.name}!`);
     };
 
     const handleLogout = () => {
@@ -110,13 +110,13 @@ export default function ProfilePage() {
             render: (text: string) => <strong>{text}</strong>,
         },
         {
-            title: 'Специалист',
+            title: 'Пакет / услуга',
             dataIndex: 'doctor',
             key: 'doctor',
             render: (doctorName: string | undefined) => doctorName || 'Не назначен', // ИСПРАВЛЕНО: Отображаем "Не назначен" если врач не указан
         },
         {
-            title: 'Дата и время визита',
+            title: 'Дата и время',
             key: 'dateTime',
             render: (_: any, record: IBooking) => (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
@@ -137,7 +137,7 @@ export default function ProfilePage() {
             render: (_: any, record: IBooking) => (
                 (record.status === 'pending' || record.status === 'confirmed') ? (
                     <Button type="link" danger onClick={() => handleCancelBooking(record.id)}>
-                        Отменить визит
+                        Отменить заявку
                     </Button>
                 ) : (
                     <Text type="secondary" disabled>Недоступно</Text>
@@ -152,7 +152,7 @@ export default function ProfilePage() {
                 <Card style={{ maxWidth: '450px', margin: '60px auto 0 auto', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
                     <div style={{ textAlign: 'center', marginBottom: '24px' }}>
                         <Title level={2}>Вход в кабинет</Title>
-                        <Paragraph type="secondary">Введите ваше имя и телефон, указанные при записи, чтобы посмотреть историю визитов.</Paragraph>
+                        <Paragraph type="secondary">Введите ваше имя и телефон, указанные при оформлении заявки, чтобы посмотреть её статус.</Paragraph>
                     </div>
 
                     <Form form={form} layout="vertical" onFinish={handleLogin} requiredMark={false}>
@@ -184,8 +184,8 @@ export default function ProfilePage() {
                     <Card style={{ marginBottom: '24px', borderRadius: '12px', background: '#fff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                             <div>
-                                <Title level={3} style={{ margin: 0 }}>Личный кабинет пациента</Title>
-                                <Text type="secondary">Пациент: </Text><strong>{user.name}</strong>
+                                <Title level={3} style={{ margin: 0 }}>Мои заявки</Title>
+                                <Text type="secondary">Клиент: </Text><strong>{user.name}</strong>
                                 <span style={{ margin: '0 8px', color: '#bfbfbf' }}>|</span>
                                 <Text type="secondary">Тел: </Text><strong>{user.phone}</strong>
                             </div>
@@ -195,7 +195,7 @@ export default function ProfilePage() {
                         </div>
                     </Card>
 
-                    <Title level={4} style={{ marginBottom: '16px' }}>История ваших записей на прием</Title>
+                    <Title level={4} style={{ marginBottom: '16px' }}>История ваших заявок</Title>
 
                     {userBookings.length > 0 ? (
                         <Table
@@ -213,7 +213,7 @@ export default function ProfilePage() {
                                 image={Empty.PRESENTED_IMAGE_SIMPLE}
                             />
                             <Button type="primary" href="/" style={{ marginTop: '16px' }}>
-                                Записаться на прием прямо сейчас
+                                Оставить заявку прямо сейчас
                             </Button>
                         </Card>
                     )}

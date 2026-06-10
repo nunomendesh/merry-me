@@ -1,119 +1,100 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Layout, Menu, Button, Drawer, Grid } from 'antd';
-import { MenuOutlined, HomeOutlined, CustomerServiceOutlined, UserOutlined, SettingOutlined } from '@ant-design/icons';
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import './globals.css';
 
-const { Header, Content, Footer } = Layout;
-const { useBreakpoint } = Grid;
+const WA_LINK = 'https://wa.me/996502454647';
+const INSTAGRAM = 'https://www.instagram.com/marryme_007_/';
+const PHONE = '+996 502 454 647';
+
+const SERVICE_PAGES = ['/proposal', '/mama', '/birthday'];
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-    const screens = useBreakpoint();
-    const pathname = usePathname();
-    const [isDrawerVisible, setIsDrawerVisible] = useState(false);
-    const [clinicName, setClinicName] = useState('МЕД-ЦЕНТР');
+  const pathname = usePathname();
+  const isServicePage = SERVICE_PAGES.includes(pathname);
+  const isAdminPage = pathname.startsWith('/admin') || pathname.startsWith('/profile');
 
-    useEffect(() => {
-        fetch('/api/data.json')
-            .then((res) => { if (res.ok) return res.json(); })
-            .then((data) => {
-                if (data?.settings?.clinicName) {
-                    setClinicName(data.settings.clinicName.toUpperCase());
-                }
-            })
-            .catch(() => console.log('Используется дефолтное название'));
-    }, []);
+  return (
+    <html lang="ru">
+    <head>
+      <title>marryme_007 — Организация праздников в Бишкеке</title>
+      <meta name="description" content="marryme_007 — организуем предложение руки и сердца, сюрпризы для мамы и дни рождения под ключ. Декор, холодные фонтаны, живые цветы. Бишкек." />
+    </head>
+    <body style={{ margin: 0, background: '#0d0118', color: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      {!isAdminPage && (
+        <header style={{
+          position: 'sticky', top: 0, zIndex: 100,
+          background: 'rgba(13, 1, 24, 0.92)',
+          backdropFilter: 'blur(12px)',
+          WebkitBackdropFilter: 'blur(12px)',
+          borderBottom: '1px solid rgba(214, 51, 132, 0.15)',
+          padding: '0 24px',
+          height: '56px',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        }}>
+          <div>
+            {isServicePage ? (
+              <Link href="/" style={{
+                color: 'rgba(255,255,255,0.8)',
+                fontSize: '14px', fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: '6px',
+              }}>
+                ← Назад
+              </Link>
+            ) : (
+              <Link href="/" style={{ fontWeight: 700, fontSize: '16px', color: '#fff', letterSpacing: '0.3px' }}>
+                marryme_007
+              </Link>
+            )}
+          </div>
+          <a
+            href={WA_LINK}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              background: '#1db954',
+              color: '#fff',
+              padding: '8px 16px',
+              borderRadius: '24px',
+              fontSize: '13px',
+              fontWeight: 600,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <span>📞</span> {PHONE}
+          </a>
+        </header>
+      )}
 
-    const isMobile = screens.xs || (screens.sm && !screens.md);
+      <main style={{ flex: 1 }}>{children}</main>
 
-    const menuItems = [
-        { key: '/', label: <Link href="/">Главная</Link>, icon: <HomeOutlined /> },
-        { key: '/services', label: <Link href="/services">Услуги и цены</Link>, icon: <CustomerServiceOutlined /> },
-        { key: '/profile', label: <Link href="/profile">Личный кабинет</Link>, icon: <UserOutlined /> },
-        { key: '/admin', label: <Link href="/admin">Админка</Link>, icon: <SettingOutlined /> },
-    ];
-
-    return (
-        <html lang="ru">
-        <body>
-        <Layout style={{ minHeight: '100vh', background: '#f8fafc' }}>
-            <Header style={{
-                position: 'sticky',
-                top: 0,
-                zIndex: 1001, // Увеличили Z-index, чтобы Header всегда был поверх всего
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                background: '#ffffff',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-                padding: isMobile ? '0 16px' : '0 40px',
-                height: '64px'
-            }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                    <Link href="/" style={{ fontWeight: 'bold', fontSize: '18px', color: '#1890ff' }}>
-                        🏢 {clinicName}
-                    </Link>
-                </div>
-
-                {!isMobile && (
-                    <Menu
-                        mode="horizontal"
-                        selectedKeys={[pathname]}
-                        items={menuItems}
-                        style={{ borderBottom: 'none', minWidth: '400px', justifyContent: 'end' }}
-                    />
-                )}
-
-                {isMobile && (
-                    <Button
-                        type="text"
-                        icon={<MenuOutlined style={{ fontSize: '18px' }} />}
-                        onClick={() => setIsDrawerVisible(true)}
-                    />
-                )}
-
-                {/* Drawer теперь стандартный, без getContainer={false},
-                    но мы добавили zIndex, чтобы он был выше всех слоев */}
-                <Drawer
-                    title="Навигация"
-                    placement="left"
-                    onClose={() => setIsDrawerVisible(false)}
-                    open={isDrawerVisible}
-                    width={280}
-                    zIndex={1002}
-                    styles={{
-                        body: { padding: '16px 0' } // Убираем боковые отступы вообще
-                    }}
-                >
-                    <Menu
-                        mode="vertical"
-                        selectedKeys={[pathname]}
-                        items={menuItems}
-                        onClick={() => setIsDrawerVisible(false)}
-                        // Добавляем этот стиль, чтобы иконки стали ближе к левому краю
-                        style={{
-                            borderRight: 'none',
-                            fontSize: '16px'
-                        }}
-                        // И используем свойство itemStyle (если версия Antd позволяет)
-                        // или просто настроим отступы пунктов меню через CSS
-                    />
-                </Drawer>
-            </Header>
-
-            <Content style={{ background: '#f8fafc' }}>
-                {children}
-            </Content>
-
-            <Footer style={{ textAlign: 'center', background: '#ffffff', borderTop: '1px solid #e2e8f0' }}>
-                © {new Date().getFullYear()} {clinicName}
-            </Footer>
-        </Layout>
-        </body>
-        </html>
-    );
+      {!isAdminPage && (
+        <footer style={{
+          background: 'rgba(13, 1, 24, 0.95)',
+          borderTop: '1px solid rgba(255,255,255,0.07)',
+          padding: '28px 24px',
+          textAlign: 'center',
+        }}>
+          <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '6px' }}>marryme_007</div>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '12px', marginBottom: '10px' }}>
+            © 2025 marryme_007. Бишкек, Кыргызстан
+          </div>
+          <a
+            href={INSTAGRAM}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: '#d63384', fontSize: '13px', fontWeight: 600 }}
+          >
+            @marryme_007
+          </a>
+        </footer>
+      )}
+    </body>
+    </html>
+  );
 }

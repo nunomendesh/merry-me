@@ -232,9 +232,9 @@ export default function AdminPage() {
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f5', padding: '16px' }}>
                 <Card style={{ maxWidth: '420px', width: '100%', borderRadius: '16px', boxShadow: '0 8px 24px rgba(0,0,0,0.06)', textAlign: 'center' }} styles={{ body: { padding: '40px 24px' } }}>
                     <MedicineBoxOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
-                    <Title level={3} style={{ marginBottom: '8px' }}>Вход в Мед-Админ</Title>
+                    <Title level={3} style={{ marginBottom: '8px' }}>Вход в marryme_007 Админ</Title>
                     <Paragraph style={{ color: '#64748b', marginBottom: '32px' }}>
-                        Введите пароль администратора для доступа к панели управления клиникой.
+                        Введите пароль для доступа к панели управления заявками.
                     </Paragraph>
                     <Form onFinish={handleLogin}>
                         <Form.Item>
@@ -270,7 +270,7 @@ export default function AdminPage() {
 
     const columns = [
         {
-            title: 'Пациент',
+            title: 'Имя клиента',
             dataIndex: 'name',
             key: 'name',
             render: (text: string, record: IBookingRequest) => (
@@ -294,7 +294,7 @@ export default function AdminPage() {
             )
         },
         {
-            title: 'Назначенный Врач',
+            title: 'Пакет / Услуга',
             dataIndex: 'doctor',
             key: 'doctor',
             render: (doctor: string | undefined, record: IBookingRequest) => (
@@ -352,7 +352,7 @@ export default function AdminPage() {
             <div style={{ marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
                 <div>
                     <Title level={isMobile ? 3 : 2} style={{ margin: 0 }}>
-                        Панель администратора клиники
+                        Панель управления marryme_007
                     </Title>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
@@ -437,7 +437,7 @@ export default function AdminPage() {
                                 <Space direction="vertical" style={{ width: '100%', marginBottom: '12px' }} size={4}>
                                     <div><Text type="secondary">Телефон: </Text><Text copyable>{record.phone}</Text></div>
                                     <div><Text type="secondary">Услуга: </Text><Text>{record.service}</Text></div>
-                                    <div><Text type="secondary">Врач: </Text><Text>{record.doctor || 'Не назначен'}</Text></div>
+                                    <div><Text type="secondary">Пакет: </Text><Text>{record.doctor || 'Не указан'}</Text></div>
                                     <div><Text type="secondary">Визит: </Text><Tag color="blue">{record.date} в {record.time}</Tag></div>
                                     <div><Text type="secondary" style={{ fontSize: '11px' }}>Создано: {dayjs(record.createdAt).format('DD.MM.YYYY HH:mm')}</Text></div>
                                 </Space>
@@ -460,7 +460,7 @@ export default function AdminPage() {
                     )}
                 </div>
             ) : (
-                <Card title="Свежие онлайн-записи пациентов" style={{ borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+                <Card title="Заявки клиентов" style={{ borderRadius: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
                     <Table
                         columns={columns}
                         dataSource={filteredAndSearchedBookings}
@@ -485,17 +485,17 @@ export default function AdminPage() {
                 style={{ top: isMobile ? 20 : 100 }}
             >
                 <Form form={addBookingForm} layout="vertical" name="addBookingForm" initialValues={{ service: 'Обратный звонок', doctor: 'Не выбран (распределит оператор)' }}>
-                    <Form.Item name="name" label="Имя пациента" rules={[{ required: true, message: 'Пожалуйста, введите имя пациента' }]}>
-                        <Input prefix={<UserOutlined />} placeholder="ФИО пациента" />
+                    <Form.Item name="name" label="Имя клиента" rules={[{ required: true, message: 'Пожалуйста, введите имя клиента' }]}>
+                        <Input prefix={<UserOutlined />} placeholder="Имя клиента" />
                     </Form.Item>
-                    <Form.Item name="phone" label="Телефон пациента" rules={[{ required: true, message: 'Пожалуйста, введите телефон пациента' }]}>
+                    <Form.Item name="phone" label="Телефон клиента" rules={[{ required: true, message: 'Пожалуйста, введите телефон клиента' }]}>
                         <Input prefix={<PhoneOutlined />} placeholder="+996 (XXX) XXX-XXX" />
                     </Form.Item>
                     <Form.Item name="service" label="Услуга/Направление" rules={[{ required: true, message: 'Пожалуйста, выберите услугу' }]}>
                         <Select options={serviceOptions} placeholder="Выберите услугу" showSearch filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
                     </Form.Item>
-                    <Form.Item name="doctor" label="Назначенный врач">
-                        <Select options={doctorOptions} placeholder="Выберите врача" showSearch filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
+                    <Form.Item name="doctor" label="Пакет / исполнитель">
+                        <Select options={doctorOptions} placeholder="Выберите пакет" showSearch filterOption={(input, option) => (option?.label ?? '').toLowerCase().includes(input.toLowerCase())} />
                     </Form.Item>
                     <Row gutter={12}>
                         <Col span={isMobile ? 24 : 12}>
