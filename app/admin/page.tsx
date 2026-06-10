@@ -34,6 +34,7 @@ export default function AdminPage() {
     const [bookings, setBookings] = useState<IBookingRequest[]>([]);
     const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [loadingAuth, setLoadingAuth] = useState(false);
+    const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -88,21 +89,22 @@ export default function AdminPage() {
     };
 
     const handleLogin = async () => {
-        if (!password) return;
+        if (!username || !password) return;
         setLoadingAuth(true);
         try {
             const res = await fetch('/api/admin/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ password }),
+                body: JSON.stringify({ username, password }),
             });
             if (res.ok) {
                 setIsAuthenticated(true);
+                setUsername('');
                 setPassword('');
                 loadBookings();
                 message.success('Вы успешно вошли в панель управления!');
             } else {
-                message.error('Неверный пароль. Попробуйте снова.');
+                message.error('Неверный логин или пароль. Попробуйте снова.');
             }
         } catch {
             message.error('Ошибка подключения. Попробуйте снова.');
@@ -236,14 +238,25 @@ export default function AdminPage() {
                     <Paragraph style={{ color: '#64748b', marginBottom: '32px' }}>
                         Введите пароль для доступа к панели управления заявками.
                     </Paragraph>
-                    <Form onFinish={handleLogin}>
+                    <Form onFinish={handleLogin} style={{ textAlign: 'left' }}>
+                        <Form.Item>
+                            <Input
+                                size="large"
+                                prefix={<UserOutlined />}
+                                placeholder="Логин"
+                                value={username}
+                                onChange={(e) => setUsername(e.target.value)}
+                                autoComplete="username"
+                            />
+                        </Form.Item>
                         <Form.Item>
                             <Input.Password
                                 size="large"
                                 prefix={<LockOutlined />}
-                                placeholder="Пароль администратора"
+                                placeholder="Пароль"
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                autoComplete="current-password"
                             />
                         </Form.Item>
                         <Button type="primary" size="large" htmlType="submit" block loading={loadingAuth}>
