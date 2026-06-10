@@ -51,24 +51,19 @@ export default function BookingForm() {
         form.setFieldsValue(initialValues);
     }, [searchParams, form, serviceOptions, doctorOptions]);
 
-    const onFinish = (values: { name: string; phone: string; service: string; doctor: string }) => {
+    const onFinish = async (values: { name: string; phone: string; service: string; doctor: string }) => {
         try {
-            const storedBookings = localStorage.getItem('med-bookings');
-            const currentBookings = storedBookings ? JSON.parse(storedBookings) : [];
-
-            const newBooking = {
-                id: `book-${Date.now()}`,
-                name: values.name,
-                phone: values.phone,
-                service: values.service,
-                doctor: values.doctor,
-                date: 'Связь по телефону',
-                time: 'В ближайшее время',
-                status: 'pending',
-                createdAt: new Date().toISOString()
-            };
-
-            localStorage.setItem('med-bookings', JSON.stringify([...currentBookings, newBooking]));
+            const res = await fetch('/api/bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: values.name,
+                    phone: values.phone,
+                    service: values.service,
+                    doctor: values.doctor,
+                }),
+            });
+            if (!res.ok) throw new Error('Ошибка сервера');
             message.success(`Заявка на "${values.service}" принята! Менеджер свяжется с вами в ближайшее время.`);
             form.resetFields();
             form.setFieldsValue({

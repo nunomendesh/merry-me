@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, Typography, Table, Tag, Modal, message, Empty } from 'antd';
+import { Card, Form, Input, Button, Typography, Table, Tag, Modal, message, Empty, Grid } from 'antd';
 import { UserOutlined, PhoneOutlined, CalendarOutlined, ClockCircleOutlined, LogoutOutlined, CheckCircleOutlined, SyncOutlined, CloseCircleOutlined } from '@ant-design/icons';
+
+const { useBreakpoint } = Grid;
 
 const { Title, Paragraph, Text } = Typography;
 
@@ -19,6 +21,8 @@ interface IBooking {
 }
 
 export default function ProfilePage() {
+    const screens = useBreakpoint();
+    const isMobile = screens.xs || (screens.sm && !screens.md);
     const [user, setUser] = useState<{ name: string; phone: string } | null>(null);
     const [userBookings, setUserBookings] = useState<IBooking[]>([]);
     const [form] = Form.useForm();
@@ -32,20 +36,16 @@ export default function ProfilePage() {
         }
     }, []);
 
-    const loadUserBookings = (name: string, phone: string) => {
-        const allBookingsRaw = localStorage.getItem('med-bookings');
-        if (allBookingsRaw) {
-            try { // ИСПРАВЛЕНО: Добавлен try-catch для парсинга localStorage
-                const allBookings: IBooking[] = JSON.parse(allBookingsRaw);
-                const filtered = allBookings.filter(
-                    (b) => b.name.trim().toLowerCase() === name.trim().toLowerCase() && b.phone.trim() === phone.trim()
-                );
-                filtered.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setUserBookings(filtered);
-            } catch (e) {
-                console.error('Ошибка парсинга данных о бронированиях из localStorage', e);
-                message.error('Ошибка загрузки ваших записей.');
+    const loadUserBookings = async (name: string, phone: string) => {
+        try {
+            const res = await fetch(`/api/bookings?name=${encodeURIComponent(name)}&phone=${encodeURIComponent(phone)}`);
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setUserBookings(data.map((b) => ({ ...b, createdAt: b.created_at })));
             }
+        } catch (e) {
+            console.error('Ошибка загрузки записей', e);
+            message.error('Ошибка загрузки ваших записей.');
         }
     };
 
@@ -71,24 +71,17 @@ export default function ProfilePage() {
             okText: 'Да, отменить',
             okType: 'danger',
             cancelText: 'Назад',
-            onOk() {
-                const allBookingsRaw = localStorage.getItem('med-bookings');
-                if (allBookingsRaw) {
-                    try { // ИСПРАВЛЕНО: Добавлен try-catch для парсинга localStorage
-                        const allBookings: IBooking[] = JSON.parse(allBookingsRaw);
-                        const updatedBookings = allBookings.map((b) =>
-                            b.id === bookingId ? { ...b, status: 'cancelled' as const } : b
-                        );
-                        localStorage.setItem('med-bookings', JSON.stringify(updatedBookings));
-
-                        if (user) {
-                            loadUserBookings(user.name, user.phone);
-                        }
-                        message.success('Запись успешно отменена.');
-                    } catch (e) {
-                        console.error('Ошибка при отмене записи из localStorage', e);
-                        message.error('Ошибка при отмене записи. Пожалуйста, попробуйте еще раз.');
-                    }
+            async onOk() {
+                try {
+                    await fetch(`/api/bookings/${bookingId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ status: 'cancelled' }),
+                    });
+                    if (user) loadUserBookings(user.name, user.phone);
+                    message.success('Запись успешно отменена.');
+                } catch {
+                    message.error('Ошибка при отмене записи.');
                 }
             },
         });
@@ -154,7 +147,7 @@ export default function ProfilePage() {
     ];
 
     return (
-        <div style={{ padding: '40px 24px', maxWidth: '1000px', margin: '0 auto', minHeight: '100vh' }}>
+        <div style={{ padding: isMobile ? '16px' : '40px 24px', maxWidth: '1000px', margin: '0 auto', minHeight: '100vh' }}>
             {!user ? (
                 <Card style={{ maxWidth: '450px', margin: '60px auto 0 auto', borderRadius: '12px', boxShadow: '0 4px 16px rgba(0,0,0,0.06)' }}>
                     <div style={{ textAlign: 'center', marginBottom: '24px' }}>

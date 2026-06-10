@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, Row, Col, Typography, Tabs, Button, Rate, Space, Tag, Image } from 'antd'; // Added Image
-import { TrophyOutlined, IdcardOutlined, UserOutlined, ArrowRightOutlined } from '@ant-design/icons'; // Added ArrowRightOutlined
+import { Card, Row, Col, Typography, Tabs, Button, Rate, Space, Tag, Image, Grid } from 'antd';
+import { TrophyOutlined, IdcardOutlined, UserOutlined, ArrowRightOutlined } from '@ant-design/icons';
+
+const { useBreakpoint } = Grid;
 import { doctorsData } from '../data/doctorsData';
 import Link from 'next/link'; // Added Link
 
@@ -11,6 +13,8 @@ const { Title, Paragraph, Text } = Typography;
 
 export default function DoctorsPage() {
     const router = useRouter();
+    const screens = useBreakpoint();
+    const isMobile = screens.xs || (screens.sm && !screens.md);
     const [activeTab, setActiveTab] = useState<string>('all');
 
     // Функция перенаправления на главную с параметром выбранного врача
@@ -34,10 +38,10 @@ export default function DoctorsPage() {
     ];
 
     return (
-        <div style={{ padding: '40px 24px', maxWidth: '1200px', margin: '0 auto', minHeight: '100vh' }}>
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <div style={{ padding: isMobile ? '16px' : '40px 24px', maxWidth: '1200px', margin: '0 auto', minHeight: '100vh' }}>
+            <div style={{ textAlign: 'center', marginBottom: isMobile ? '24px' : '40px' }}>
                 <Title level={1}>Наши Специалисты</Title>
-                <Paragraph style={{ fontSize: '16px', color: '#8c8c8c' }}>
+                <Paragraph style={{ fontSize: isMobile ? '14px' : '16px', color: '#8c8c8c' }}>
                     Высококвалифицированные врачи нашего центра всегда готовы помочь вам и вашему здоровью.
                 </Paragraph>
             </div>

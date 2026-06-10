@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
-import { Table, Tag, Card, Row, Col, Statistic, Select, Button, Typography, message, Input, DatePicker, Space, Modal, Form, Grid, Flex } from 'antd';
+import { Table, Tag, Card, Row, Col, Statistic, Select, Button, Typography, message, Input, DatePicker, Space, Modal, Form, Grid, Flex, Spin } from 'antd';
 import {
-    CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, UserOutlined, GoogleOutlined,
-    GithubOutlined, LogoutOutlined, MedicineBoxOutlined, SearchOutlined, DeleteOutlined, PlusOutlined,
-    FilterOutlined, PhoneOutlined, EditOutlined
+    CalendarOutlined, CheckCircleOutlined, ClockCircleOutlined, UserOutlined,
+    LogoutOutlined, MedicineBoxOutlined, SearchOutlined, DeleteOutlined, PlusOutlined,
+    FilterOutlined, PhoneOutlined, EditOutlined, LockOutlined
 } from '@ant-design/icons';
 import { servicesData } from '../data/servicesData';
 import { doctorsData } from '../data/doctorsData';
@@ -32,9 +32,9 @@ export default function AdminPage() {
     const isMobile = screens.xs || (screens.sm && !screens.md); // Флаг: экран мобильный (меньше 768px)
 
     const [bookings, setBookings] = useState<IBookingRequest[]>([]);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-    const [userSession, setUserSession] = useState<{ name: string; provider: string } | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
     const [loadingAuth, setLoadingAuth] = useState(false);
+    const [password, setPassword] = useState('');
 
     const [searchTerm, setSearchTerm] = useState('');
     const [filterStatus, setFilterStatus] = useState<IBookingRequest['status'] | 'all'>('all');
@@ -62,67 +62,73 @@ export default function AdminPage() {
     );
 
     useEffect(() => {
-        const session = localStorage.getItem('med-admin-session');
-        if (session) {
-            setIsAuthenticated(true);
-            setUserSession(JSON.parse(session));
-        }
-        loadBookings();
+        fetch('/api/admin/session')
+            .then((res) => {
+                if (res.ok) {
+                    setIsAuthenticated(true);
+                    loadBookings();
+                } else {
+                    setIsAuthenticated(false);
+                }
+            })
+            .catch(() => setIsAuthenticated(false));
     }, []);
 
-    const loadBookings = () => {
-        const storedData = localStorage.getItem('med-bookings');
-        if (storedData) {
-            try {
-                const parsedData: IBookingRequest[] = JSON.parse(storedData);
-                parsedData.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-                setBookings(parsedData);
-            } catch (e) {
-                console.error('Ошибка парсинга данных из localStorage', e);
-                message.error('Ошибка загрузки данных. Пожалуйста, попробуйте еще раз.');
+    const loadBookings = async () => {
+        try {
+            const res = await fetch('/api/bookings');
+            const data = await res.json();
+            if (Array.isArray(data)) {
+                setBookings(data.map((b) => ({ ...b, createdAt: b.created_at })));
             }
+        } catch (e) {
+            console.error('Ошибка загрузки данных', e);
+            message.error('Ошибка загрузки данных.');
         }
     };
 
-    const handleLogin = (provider: 'Google' | 'GitHub') => {
+    const handleLogin = async () => {
+        if (!password) return;
         setLoadingAuth(true);
-        message.loading({ content: `Подключение к сервису ${provider}...`, key: 'auth' });
-
-        setTimeout(() => {
-            const mockUser = {
-                name: provider === 'Google' ? 'Администратор Google' : 'Разработчик GitHub',
-                provider: provider
-            };
-            localStorage.setItem('med-admin-session', JSON.stringify(mockUser));
-            setIsAuthenticated(true);
-            setUserSession(mockUser);
+        try {
+            const res = await fetch('/api/admin/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password }),
+            });
+            if (res.ok) {
+                setIsAuthenticated(true);
+                setPassword('');
+                loadBookings();
+                message.success('Вы успешно вошли в панель управления!');
+            } else {
+                message.error('Неверный пароль. Попробуйте снова.');
+            }
+        } catch {
+            message.error('Ошибка подключения. Попробуйте снова.');
+        } finally {
             setLoadingAuth(false);
-            message.success({ content: `Вы успешно вошли через ${provider}!`, key: 'auth', duration: 2 });
-        }, 1200);
+        }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('med-admin-session');
+    const handleLogout = async () => {
+        await fetch('/api/admin/logout', { method: 'POST' });
         setIsAuthenticated(false);
-        setUserSession(null);
         message.info('Вы вышли из панели управления.');
     };
 
-    const updateBookingField = (id: string, field: keyof IBookingRequest, value: any) => {
-        const updatedBookings = bookings.map((booking) => {
-            if (booking.id === id) {
-                return { ...booking, [field]: value };
-            }
-            return booking;
-        });
-        setBookings(updatedBookings);
-        localStorage.setItem('med-bookings', JSON.stringify(updatedBookings));
-
-        const fieldName = {
-            name: 'Имя пациента', phone: 'Телефон', service: 'Услуга',
-            doctor: 'Врач', date: 'Дата', time: 'Время', status: 'Статус', id: '1', createdAt: new Date(),
-        }[field] || String(field);
-        message.success(`${fieldName} успешно обновлено!`, 1.5);
+    const updateBookingField = async (id: string, field: keyof IBookingRequest, value: any) => {
+        setBookings((prev) => prev.map((b) => b.id === id ? { ...b, [field]: value } : b));
+        try {
+            await fetch(`/api/bookings/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ [field]: value }),
+            });
+        } catch {
+            message.error('Ошибка при обновлении записи.');
+            loadBookings();
+        }
     };
 
     const handleStatusChange = (id: string, newStatus: IBookingRequest['status']) => {
@@ -136,10 +142,9 @@ export default function AdminPage() {
             okText: 'Да, удалить',
             okType: 'danger',
             cancelText: 'Отмена',
-            onOk() {
-                const updatedBookings = bookings.filter(booking => booking.id !== id);
-                setBookings(updatedBookings);
-                localStorage.setItem('med-bookings', JSON.stringify(updatedBookings));
+            async onOk() {
+                await fetch(`/api/bookings/${id}`, { method: 'DELETE' });
+                setBookings((prev) => prev.filter((b) => b.id !== id));
                 message.success('Запись успешно удалена!');
             },
         });
@@ -151,22 +156,20 @@ export default function AdminPage() {
             const formattedDate = values.date instanceof dayjs ? values.date.format('YYYY-MM-DD') : 'Связь по телефону';
             const formattedTime = values.time instanceof dayjs ? values.time.format('HH:mm') : 'В ближайшее время';
 
-            const newBooking: IBookingRequest = {
-                id: `admin-book-${Date.now()}`,
-                name: values.name,
-                phone: values.phone,
-                service: values.service,
-                doctor: values.doctor || 'Не выбран (распределит оператор)',
-                date: formattedDate,
-                time: formattedTime,
-                status: 'pending',
-                createdAt: new Date().toISOString(),
-            };
-
-            const updatedBookings = [newBooking, ...bookings];
-            setBookings(updatedBookings);
-            localStorage.setItem('med-bookings', JSON.stringify(updatedBookings));
-
+            const res = await fetch('/api/bookings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: values.name,
+                    phone: values.phone,
+                    service: values.service,
+                    doctor: values.doctor || null,
+                    date: formattedDate,
+                    time: formattedTime,
+                }),
+            });
+            if (!res.ok) throw new Error();
+            await loadBookings();
             message.success('Новая запись успешно добавлена!');
             setIsAddBookingModalVisible(false);
             addBookingForm.resetFields();
@@ -216,6 +219,14 @@ export default function AdminPage() {
         return currentBookings;
     }, [bookings, searchTerm, filterStatus, filterDoctor, filterService, filterDateRange]);
 
+    if (isAuthenticated === null) {
+        return (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh' }}>
+                <Spin size="large" />
+            </div>
+        );
+    }
+
     if (!isAuthenticated) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '100vh', background: '#f0f2f5', padding: '16px' }}>
@@ -223,16 +234,22 @@ export default function AdminPage() {
                     <MedicineBoxOutlined style={{ fontSize: '48px', color: '#1890ff', marginBottom: '16px' }} />
                     <Title level={3} style={{ marginBottom: '8px' }}>Вход в Мед-Админ</Title>
                     <Paragraph style={{ color: '#64748b', marginBottom: '32px' }}>
-                        Для доступа к панели управления записями клиники, пожалуйста, авторизуйтесь через корпоративный аккаунт.
+                        Введите пароль администратора для доступа к панели управления клиникой.
                     </Paragraph>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                        <Button type="default" size="large" icon={<GoogleOutlined style={{ color: '#ea4335' }} />} block disabled={loadingAuth} onClick={() => handleLogin('Google')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', fontWeight: 500 }}>
-                            Войти через Google
+                    <Form onFinish={handleLogin}>
+                        <Form.Item>
+                            <Input.Password
+                                size="large"
+                                prefix={<LockOutlined />}
+                                placeholder="Пароль администратора"
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </Form.Item>
+                        <Button type="primary" size="large" htmlType="submit" block loading={loadingAuth}>
+                            Войти
                         </Button>
-                        <Button type="default" size="large" icon={<GithubOutlined />} block disabled={loadingAuth} onClick={() => handleLogin('GitHub')} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '8px', fontWeight: 500, background: '#171515', color: '#fff' }}>
-                            Войти через GitHub
-                        </Button>
-                    </div>
+                    </Form>
                 </Card>
             </div>
         );
@@ -337,11 +354,6 @@ export default function AdminPage() {
                     <Title level={isMobile ? 3 : 2} style={{ margin: 0 }}>
                         Панель администратора клиники
                     </Title>
-                    {userSession && (
-                        <span style={{ color: '#8c8c8c', fontSize: '14px' }}>
-                            Сессия: <strong>{userSession.name}</strong>
-                        </span>
-                    )}
                 </div>
                 <div style={{ display: 'flex', gap: '8px', width: isMobile ? '100%' : 'auto' }}>
                     <Button type="default" onClick={loadBookings} icon={<SearchOutlined />} style={{ flex: isMobile ? 1 : 'none' }}>

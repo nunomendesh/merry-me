@@ -51,15 +51,22 @@ function HomePageContent() {
   });
 
   useEffect(() => {
-    // 1. Загрузка отзывов из localStorage
-    const savedReviews = localStorage.getItem('med-reviews');
-    if (savedReviews) {
-      setReviews(JSON.parse(savedReviews));
-    } else {
-      const defaultReviews: IReview[] = [];
-      setReviews(defaultReviews);
-      localStorage.setItem('med-reviews', JSON.stringify(defaultReviews));
-    }
+    // 1. Загрузка отзывов из Supabase
+    fetch('/api/reviews')
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setReviews(data.map((r) => ({
+            id: r.id,
+            author: r.author,
+            doctorName: r.doctor_name,
+            rating: r.rating,
+            content: r.content,
+            date: new Date(r.created_at).toLocaleDateString('ru-RU'),
+          })));
+        }
+      })
+      .catch(() => setReviews([]));
 
     // 2. Запрос к бэкенду за настройками и врачами
     fetch('/api/data.json')
@@ -91,31 +98,41 @@ function HomePageContent() {
         });
   }, []);
 
-  const handleSubmitReview = () => {
+  const handleSubmitReview = async () => {
     if (!reviewAuthor.trim() || !reviewDoctor || !reviewContent.trim()) {
       message.error('Пожалуйста, заполните все поля формы и выберите специалиста!');
       return;
     }
 
-    const newReview: IReview = {
-      id: `rev-${Date.now()}`,
-      author: reviewAuthor,
-      doctorName: reviewDoctor,
-      rating: reviewRating,
-      content: reviewContent,
-      date: new Date().toLocaleDateString('ru-RU')
-    };
-
-    const updatedReviews = [newReview, ...reviews];
-    setReviews(updatedReviews);
-    localStorage.setItem('med-reviews', JSON.stringify(updatedReviews));
-
-    setReviewAuthor('');
-    setReviewDoctor('');
-    setReviewRating(5);
-    setReviewContent('');
-
-    message.success('Спасибо за отзыв! Он успешно добавлен на сайт.');
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          author: reviewAuthor,
+          doctor_name: reviewDoctor,
+          rating: reviewRating,
+          content: reviewContent,
+        }),
+      });
+      if (!res.ok) throw new Error();
+      const saved = await res.json();
+      setReviews([{
+        id: saved.id,
+        author: saved.author,
+        doctorName: saved.doctor_name,
+        rating: saved.rating,
+        content: saved.content,
+        date: new Date(saved.created_at).toLocaleDateString('ru-RU'),
+      }, ...reviews]);
+      setReviewAuthor('');
+      setReviewDoctor('');
+      setReviewRating(5);
+      setReviewContent('');
+      message.success('Спасибо за отзыв! Он успешно добавлен на сайт.');
+    } catch {
+      message.error('Ошибка при сохранении отзыва.');
+    }
   };
 
   return (
@@ -150,7 +167,7 @@ function HomePageContent() {
 
             <Row gutter={[24, 24]}>
               {/* Левая колонка: Форма отзыва */}
-              <Col xs={24} md={10}>
+              <Col xs={24} sm={24} md={10}>
                 <Card title="Оставить отзыв" style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }} styles={{ body: { padding: isMobile ? '16px' : '24px' } }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
                     <div>
@@ -188,7 +205,7 @@ function HomePageContent() {
               </Col>
 
               {/* Правая колонка: Лента отзывов */}
-              <Col xs={24} md={14}>
+              <Col xs={24} sm={24} md={14}>
                 <Card title={`Все отзывы (${reviews.length})`} style={{ borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.03)' }} styles={{ body: { padding: isMobile ? '16px' : '24px' } }}>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxHeight: isMobile ? '350px' : '430px', overflowY: 'auto', paddingRight: '4px' }}>
                     {reviews.length === 0 ? (

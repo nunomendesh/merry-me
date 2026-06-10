@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
-import { Row, Col, Card, Typography, Tag, Space, Divider, Button } from 'antd';
+import { Row, Col, Card, Typography, Tag, Space, Divider, Button, Grid } from 'antd';
+
+const { useBreakpoint } = Grid;
 import {
     ExperimentOutlined,
     HeartOutlined,
@@ -17,6 +19,8 @@ const { Title, Paragraph, Text } = Typography;
 
 export default function ServicesPage() {
     const router = useRouter();
+    const screens = useBreakpoint();
+    const isMobile = screens.xs || (screens.sm && !screens.md);
 
     const getCategoryIcon = (iconName: string | undefined) => { // ИСПРАВЛЕНО: iconName может быть undefined
         switch (iconName) {
@@ -37,10 +41,10 @@ export default function ServicesPage() {
     };
 
     return (
-        <div style={{ padding: '40px 24px', maxWidth: '1200px', margin: '0 auto', minHeight: '100vh' }}>
-            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <div style={{ padding: isMobile ? '16px' : '40px 24px', maxWidth: '1200px', margin: '0 auto', minHeight: '100vh' }}>
+            <div style={{ textAlign: 'center', marginBottom: isMobile ? '24px' : '40px' }}>
                 <Title level={1}>Наши Услуги и Прайс-лист</Title>
-                <Paragraph style={{ fontSize: '16px', color: '#8c8c8c' }}>
+                <Paragraph style={{ fontSize: isMobile ? '14px' : '16px', color: '#8c8c8c' }}>
                     Выберите интересующее вас направление, ознакомьтесь с ценами и запишитесь на прием онлайн за пару кликов.
                 </Paragraph>
             </div>

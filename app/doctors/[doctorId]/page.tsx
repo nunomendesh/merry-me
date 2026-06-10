@@ -35,18 +35,27 @@ export default function DoctorDetailPage({ params }: DoctorDetailPageProps) {
     const doctor: IDoctor | undefined = doctorsData.find(doc => doc.id === doctorId);
 
     useEffect(() => {
-        if (doctor) {
-            const savedReviews = localStorage.getItem('med-reviews');
-            if (savedReviews) {
-                const allReviews: IReview[] = JSON.parse(savedReviews);
-                // Фильтруем отзывы, относящиеся только к текущему врачу
-                const filteredReviews = allReviews.filter(
-                    (review) => review.doctorName === doctor.name
-                );
-                setDoctorReviews(filteredReviews);
-            }
-        }
-    }, [doctor]); // Перезагружаем отзывы при изменении врача
+        if (!doctor) return;
+        fetch('/api/reviews')
+            .then((res) => res.json())
+            .then((data) => {
+                if (Array.isArray(data)) {
+                    setDoctorReviews(
+                        data
+                            .filter((r) => r.doctor_name === doctor.name)
+                            .map((r) => ({
+                                id: r.id,
+                                author: r.author,
+                                doctorName: r.doctor_name,
+                                rating: r.rating,
+                                content: r.content,
+                                date: new Date(r.created_at).toLocaleDateString('ru-RU'),
+                            }))
+                    );
+                }
+            })
+            .catch(() => setDoctorReviews([]));
+    }, [doctor]);
 
     if (!doctor) {
         notFound(); // Выводим 404, если врач не найден
